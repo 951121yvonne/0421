@@ -14,6 +14,8 @@ function preload() {
 
 function setup() {
   createCanvas(640, 480);
+  // 針對手機優化：強制設定像素密度為 1，避免 Retina/高解析度螢幕導致的效能下降
+  pixelDensity(1);
   
   // 1. 設定攝影機
   capture = createCapture(VIDEO);
@@ -51,16 +53,20 @@ function draw() {
   // 處理像素
   capture.loadPixels();
   
-  for (let x = 0; x < capture.width; x += span) {
-    for (let y = 0; y < capture.height; y += span) {
-      // 取得當前像素顏色
-      let pixel = capture.get(x, y);
-      let r = pixel[0];
-      let g = pixel[1];
-      let b = pixel[2];
-      let bk = (r + g + b) / 3; // 取得亮度
+  // 效能優化：預先計算寬高，避免在迴圈中重複讀取
+  let w = capture.width;
+  let h = capture.height;
+
+  for (let y = 0; y < h; y += span) {
+    for (let x = 0; x < w; x += span) {
+      // 效能優化：直接從 pixels 陣列讀取顏色，而非使用慢速的 get()
+      let index = (x + y * w) * 4;
+      let r = capture.pixels[index];
+      let g = capture.pixels[index + 1];
+      let b = capture.pixels[index + 2];
+      let bk = (r + g + b) / 3;
       
-      fill(pixel);
+      fill(r, g, b);
       noStroke();
 
       // 4. 根據 mode 產生不同效果
